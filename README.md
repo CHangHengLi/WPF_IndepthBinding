@@ -1,6 +1,7 @@
 # WPF集合绑定MVVM示例
 
 这是一个基于.NET 8.0 WPF的MVVM架构示例项目，展示了如何使用ObservableCollection的扩展实现来处理高级集合绑定场景。
+![image](https://github.com/user-attachments/assets/f367f5fb-046b-48da-ae87-b94c5930ea63)
 
 ## 项目简介
 
