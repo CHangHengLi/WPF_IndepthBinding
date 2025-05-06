@@ -4,6 +4,7 @@ using System.Linq;
 using System.Windows.Input;
 using CollectionBindingDemo.Commands;
 using CollectionBindingDemo.Models;
+using CollectionBindingDemo.Services;
 
 namespace CollectionBindingDemo.ViewModels
 {
@@ -22,30 +23,13 @@ namespace CollectionBindingDemo.ViewModels
         public ICommand ClearPeopleCommand { get; }
         public ICommand AddRangeCommand { get; }
         public ICommand FilterOlderThanCommand { get; }
-
-        // 姓氏和名字库，用于随机生成姓名
-        private readonly string[] _familyNames = 
-        {
-            "赵", "钱", "孙", "李", "周", "吴", "郑", "王", 
-            "冯", "陈", "褚", "卫", "蒋", "沈", "韩", "杨", 
-            "朱", "秦", "尤", "许", "何", "吕", "施", "张", 
-            "孔", "曹", "严", "华", "金", "魏", "陶", "姜"
-        };
-        
-        private readonly string[] _givenNames = 
-        {
-            "伟", "芳", "娜", "秀英", "敏", "静", "丽", "强", 
-            "磊", "军", "洋", "勇", "艳", "杰", "娟", "涛", 
-            "明", "超", "秀兰", "霞", "平", "刚", "桂英", "华"
-        };
-        
-        // 随机数生成器
-        private readonly Random _random = new Random();
+        public ICommand OpenMasterDetailWindowCommand { get; }
+        public ICommand OpenCollectionViewWindowCommand { get; }
 
         public MainViewModel()
         {
-            // 初始化集合
-            People = new ItemPropertyObservableCollection<Person>();
+            // 使用共享数据源
+            People = DataRepository.Instance.People;
             
             // 初始化命令
             AddPersonCommand = new DelegateCommand(ExecuteAddPerson, CanExecuteAddPerson);
@@ -53,15 +37,16 @@ namespace CollectionBindingDemo.ViewModels
             ClearPeopleCommand = new DelegateCommand(ExecuteClearPeople);
             AddRangeCommand = new DelegateCommand(ExecuteAddRange);
             FilterOlderThanCommand = new DelegateCommand(ExecuteFilterOlderThan);
-            
-            // 添加测试数据
-            LoadInitialData();
+            OpenMasterDetailWindowCommand = new DelegateCommand(ExecuteOpenMasterDetailWindow);
+            OpenCollectionViewWindowCommand = new DelegateCommand(ExecuteOpenCollectionViewWindow);
             
             // 监听属性变化
             People.ItemPropertyChanged += (sender, e) =>
             {
                 StatusMessage = $"人员 {e.ChangedItem.Name} 的 {e.PropertyName} 属性已更改";
             };
+            
+            StatusMessage = $"主窗口已加载，当前共有{People.Count}位人员";
         }
 
         // 公开的属性
@@ -152,7 +137,7 @@ namespace CollectionBindingDemo.ViewModels
         {
             if (string.IsNullOrEmpty(this[nameof(NewPersonAge)]) && int.TryParse(_newPersonAgeText, out int age))
             {
-                var newPerson = new Person { Name = NewPersonName, Age = NewPersonAge };
+                var newPerson = new Person { Name = NewPersonName, Age = NewPersonAge, Gender = "未知" };
                 People.Add(newPerson);
                 StatusMessage = $"已添加人员: {newPerson.Name}, {newPerson.Age}岁";
                 
@@ -193,40 +178,8 @@ namespace CollectionBindingDemo.ViewModels
 
         private void ExecuteAddRange(object parameter)
         {
-            var bulkCollection = new BulkObservableCollection<Person>();
-            
-            // 复制当前集合中的所有项目
-            foreach (var person in People)
-            {
-                bulkCollection.Add(person);
-            }
-            
-            // 随机生成4位人员
-            var newPeople = new List<Person>();
-            for (int i = 0; i < 4; i++)
-            {
-                string randomName = GenerateRandomName();
-                int randomAge = _random.Next(18, 61); // 18-60岁之间的随机年龄
-                
-                newPeople.Add(new Person { Name = randomName, Age = randomAge });
-            }
-            
-            // 批量添加随机生成的数据
-            bulkCollection.AddRange(newPeople);
-            
-            // 替换当前集合
-            People = new ItemPropertyObservableCollection<Person>(bulkCollection);
-            
-            StatusMessage = $"已批量添加{newPeople.Count}位随机人员";
-        }
-
-        // 生成随机中文姓名
-        private string GenerateRandomName()
-        {
-            string familyName = _familyNames[_random.Next(_familyNames.Length)];
-            string givenName = _givenNames[_random.Next(_givenNames.Length)];
-            
-            return familyName + givenName;
+            var addedPeople = DataRepository.Instance.AddRandomPeopleBulk(4);
+            StatusMessage = $"已批量添加{addedPeople.Count}位随机人员";
         }
 
         private void ExecuteFilterOlderThan(object parameter)
@@ -243,15 +196,28 @@ namespace CollectionBindingDemo.ViewModels
             }
         }
 
-        // 加载初始数据
-        private void LoadInitialData()
+        // 打开主从视图窗口
+        private void ExecuteOpenMasterDetailWindow(object parameter)
         {
-            People.Add(new Person { Name = "张三", Age = 28 });
-            People.Add(new Person { Name = "李四", Age = 32 });
-            People.Add(new Person { Name = "王五", Age = 25 });
-            People.Add(new Person { Name = "赵六", Age = 41 });
+            // 获取当前主窗口
+            if (System.Windows.Application.Current.MainWindow is MainWindow mainWindow)
+            {
+                mainWindow.OpenMasterDetailWindow();
+            }
             
-            StatusMessage = "已加载4位初始人员";
+            StatusMessage = "已打开主从视图示例窗口";
+        }
+
+        // 打开CollectionView示例窗口
+        private void ExecuteOpenCollectionViewWindow(object parameter)
+        {
+            // 获取当前主窗口
+            if (System.Windows.Application.Current.MainWindow is MainWindow mainWindow)
+            {
+                mainWindow.OpenCollectionViewWindow();
+            }
+            
+            StatusMessage = "已打开CollectionView功能示例窗口";
         }
     }
 } 

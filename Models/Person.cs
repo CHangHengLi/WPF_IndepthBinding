@@ -7,6 +7,7 @@ namespace CollectionBindingDemo.Models
     {
         private string _name;
         private int _age;
+        private string _gender;
         
         public event PropertyChangedEventHandler PropertyChanged;
         
@@ -46,9 +47,22 @@ namespace CollectionBindingDemo.Models
             }
         }
 
+        public string Gender
+        {
+            get => _gender;
+            set
+            {
+                if (_gender != value)
+                {
+                    _gender = value;
+                    OnPropertyChanged(nameof(Gender));
+                }
+            }
+        }
+
         public override string ToString()
         {
-            return $"{Name}, {Age}岁";
+            return $"{Name}, {Age}岁, {Gender}";
         }
     }
 } 
